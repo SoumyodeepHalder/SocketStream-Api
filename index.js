@@ -5,7 +5,8 @@ const { Server } = require('socket.io');
 const Chatrooms = require('./models/Chatrooms');
 const Messages = require('./models/Messages');
 const Users = require('./models/Users');
-const { v4: uuidv4 } = require('uuid');
+// const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid').native || require('uuid');
 // const roomID = uuidv4(); // Generates e.g., "1b9d6bcd-bbfd-4b2d-9b5d-ab0dfbbd4bed"
 
 require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
