@@ -6,7 +6,7 @@ const Chatrooms = require('./models/Chatrooms');
 const Messages = require('./models/Messages');
 const Users = require('./models/Users');
 // const { v4: uuidv4 } = require('uuid');
-const { v4: uuidv4 } = require('uuid').native || require('uuid');
+// const { v4: uuidv4 } = require('uuid').native || require('uuid');
 // const roomID = uuidv4(); // Generates e.g., "1b9d6bcd-bbfd-4b2d-9b5d-ab0dfbbd4bed"
 
 require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
@@ -56,7 +56,7 @@ async function getRoomId (user1Id, user2Id){
     
     // If room doesn't exist, create it dynamically
     if (!chatroom && user1Id && user2Id) {
-        const newRoomId = uuidv4();
+        const newRoomId = await generateId();
         chatroom = new Chatrooms({
             roomid: newRoomId,
             participants: [user1Id, user2Id]
@@ -87,6 +87,12 @@ async function getAllUsers(){
 
 async function getRandomId(){
     return uuidv4();
+}
+
+async function generateId() {
+  const { v4: uuidv4 } = await import('uuid');
+  const id = uuidv4();
+  return id;
 }
 
 
