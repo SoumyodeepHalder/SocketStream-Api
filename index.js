@@ -43,16 +43,16 @@ mongoose.connect("mongodb+srv://soumyodeep2:soumyodeep2@cluster0.d7uxyws.mongodb
 
 
 // FUNCTIONS
-async function getRoomId (user1Id, user2Id, context){
+async function getRoomId(user1Id, user2Id, context) {
     let chatroom = await Chatrooms.findOne({
         participants: {
             $all: [user1Id, user2Id],
             $size: 2
         }
     });
-    
+
     // If room doesn't exist, create it dynamically
-    if (!chatroom && context==='private_message') {
+    if (!chatroom && context === 'private_message') {
         console.log('7. roomid doesnt exist so crating one')
         const newRoomId = await generateId();
         console.log('8. created roomid: ', newRoomId)
@@ -69,14 +69,14 @@ async function getRoomId (user1Id, user2Id, context){
     return chatroom ? chatroom.roomid : null;
 };
 
-async function getAllMessage (roomid){
+async function getAllMessage(roomid) {
     if (!roomid) return [];
-    const messages1=await Messages.find({ roomid: roomid })
+    const messages1 = await Messages.find({ roomid: roomid })
     console.log('14. fetched messages: ', messages1.length);
     return messages1;
 }
 
-async function uploadMessage(sender, roomid, message){
+async function uploadMessage(sender, roomid, message) {
     const newMessage = new Messages({
         sender: sender,
         roomid: roomid,
@@ -86,7 +86,7 @@ async function uploadMessage(sender, roomid, message){
     return await newMessage.save();
 }
 
-async function getAllUsers(){
+async function getAllUsers() {
     return await Users.distinct('username');
 }
 
@@ -94,7 +94,7 @@ async function generateId() {
     const { v4: uuidv4 } = await import('uuid');
     const id = uuidv4();
     return id;
-  }
+}
 
 
 
@@ -113,7 +113,7 @@ io.on('connection', (socket) => {
     //consele.log(`⚡ New visual device connected: ${socket.id}`);
 
 
-    socket.on('register_user', async(username) => {
+    socket.on('register_user', async (username) => {
         if (username && username.trim() !== '') {
             // console.log("1. in server register_user: ", username);
             if (!connectedUsers.has(username)) {
@@ -121,39 +121,39 @@ io.on('connection', (socket) => {
             }
             connectedUsers.get(username).add(socket.id);
             socket.username = username;
-    
+
             console.log(`1. 👤 Active User mapped: ${username} -> ${socket.id}`);
 
-            const allUsers=await getAllUsers();
+            const allUsers = await getAllUsers();
 
             console.log('2. sending list of all users online_user: ', allUsers);
-            
+
             // Send current list of online users to everyone
             io.emit('online_users', allUsers);
         }
     });
 
-    socket.on('chat-history', async(currentRecipient) =>{
+    socket.on('chat-history', async (currentRecipient) => {
         if (!socket.username) return;
-        
+
         console.log("3. fetching chat-history of: ", socket.username, currentRecipient);
         if (socket.username !== currentRecipient) {
             const roomid = await getRoomId(socket.username, currentRecipient, 'chat_history');
-            if(roomid){
+            if (roomid) {
                 const allMessages = await getAllMessage(roomid);
                 socket.emit('chat-history', allMessages);
                 console.log('16. sent all messages');
             }
-            else{
-                console.log('5. sending null as chat-history: ',roomid);
+            else {
+                console.log('5. sending null as chat-history: ', roomid);
                 socket.emit('chat-history', roomid)
             }
         }
     })
 
 
-    socket.on('private_message', async({sender, recipient, message }) => {
-        console.log('6. received private message: ',sender, message, 'to ', recipient)
+    socket.on('private_message', async ({ sender, recipient, message }) => {
+        console.log('6. received private message: ', sender, message, 'to ', recipient)
         if (!socket.username || !recipient) return;
 
 
@@ -167,9 +167,10 @@ io.on('connection', (socket) => {
         console.log('11. recipient socket: ', recipientSockets, 'recipient: ', recipient)
         if (recipientSockets && recipientSockets.size > 0) {
             const primarySocketId = Array.from(recipientSockets)[0];
+            const allMessages = await getAllMessage(roomid);
             io.to(primarySocketId).emit('receive_message', {
-                sender: socket.username, 
-                message: message
+                sender: socket.username,
+                message: allMessages
             });
             console.log('16. sent priavate message to: ', recipientSockets)
         }
